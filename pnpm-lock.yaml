@@ -30,6 +30,9 @@ catalogs:
     eslint-plugin-solid:
       specifier: ^0.14.5
       version: 0.14.5
+    lucide-solid:
+      specifier: ^0.511.0
+      version: 0.511.0
     solid-js:
       specifier: ^1.9.5
       version: 1.9.7
@@ -60,7 +63,7 @@ importers:
         specifier: 'catalog:'
         version: 0.65.4
       lucide-solid:
-        specifier: ^0.511.0
+        specifier: 'catalog:'
         version: 0.511.0(solid-js@1.9.7)
       solid-js:
         specifier: 'catalog:'
