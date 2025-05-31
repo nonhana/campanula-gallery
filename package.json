@@ -1,0 +1,35 @@
+{
+  "name": "campanula-works",
+  "type": "module",
+  "version": "0.0.1",
+  "packageManager": "pnpm@10.11.0",
+  "author": "non_hana",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "vinxi dev",
+    "build": "vinxi build",
+    "start": "vinxi start",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "dependencies": {
+    "@solidjs/meta": "catalog:",
+    "@solidjs/router": "catalog:",
+    "@solidjs/start": "catalog:",
+    "@unocss/reset": "catalog:",
+    "lucide-solid": "catalog:",
+    "solid-js": "catalog:",
+    "unocss": "catalog:",
+    "vinxi": "catalog:"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "catalog:",
+    "@unocss/eslint-plugin": "catalog:",
+    "eslint": "catalog:",
+    "eslint-plugin-solid": "catalog:",
+    "unocss-preset-scrollbar": "catalog:"
+  }
+}

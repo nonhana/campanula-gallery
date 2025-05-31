@@ -1,0 +1,16 @@
+catalog:
+  '@antfu/eslint-config': ^4.13.2
+  '@solidjs/meta': ^0.29.4
+  '@solidjs/router': ^0.15.0
+  '@solidjs/start': ^1.1.0
+  '@unocss/eslint-plugin': ^66.1.2
+  '@unocss/reset': ^0.65.1
+  eslint: ^9.27.0
+  eslint-plugin-solid: ^0.14.5
+  lucide-solid: ^0.511.0
+  solid-js: ^1.9.5
+  unocss: ^0.65.1
+  unocss-preset-scrollbar: ^3.2.0
+  vinxi: ^0.5.3
+onlyBuiltDependencies:
+  - unrs-resolver
