@@ -2,8 +2,10 @@ import { WorkList } from './WorkList'
 
 export default function Main() {
   return (
-    <div class="mx-auto p-8 container">
-      <WorkList />
-    </div>
+    <main class="relative">
+      <div class="mx-auto max-w-7xl px-4 py-12 lg:px-8 sm:px-6">
+        <WorkList />
+      </div>
+    </main>
   )
 }

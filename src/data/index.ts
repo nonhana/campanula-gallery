@@ -1,5 +1,10 @@
 import type { WorkItem } from '~/types'
 
+export const bannerInfo = {
+  name: '待夕归明',
+  description: '我和我沉寂的灵魂，伴有十一月的初雪...',
+}
+
 export const publishedWorks: WorkItem[] = [
   {
     title: '夏の夕焼け',
