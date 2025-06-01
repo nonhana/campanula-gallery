@@ -1,6 +1,7 @@
 import { Music } from 'lucide-solid'
-import { createSignal, For, onMount } from 'solid-js'
+import { createSignal, onMount } from 'solid-js'
 import { publishedWorks } from '~/data'
+import { MasonryGrid } from './MasonryGrid'
 import WorkItem from './WorkItem'
 
 export function WorkList() {
@@ -25,20 +26,15 @@ export function WorkList() {
       </div>
 
       <div
-        class={
-          `grid grid-cols-2 gap-8 md:grid-cols-3 lg:grid-cols-4 ${isLoaded() ? 'opacity-100' : 'opacity-0'}`
-        }
+        class={isLoaded() ? 'opacity-100' : 'opacity-0'}
         style={{ transition: 'opacity 600ms ease-out' }}
       >
-        {/* <MasonryGrid
+        <MasonryGrid
           items={publishedWorks}
           minColumnWidth={280}
           gap={24}
-          renderItem={(work: WorkItemType, _index: number) => <WorkItem work={work} />}
-        /> */}
-        <For each={publishedWorks}>
-          {work => <WorkItem work={work} />}
-        </For>
+          renderItem={work => <WorkItem work={work} />}
+        />
       </div>
     </section>
   )

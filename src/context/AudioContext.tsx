@@ -4,11 +4,16 @@ import { createContext, createSignal, useContext } from 'solid-js'
 interface AudioContextType {
   currentAudio: () => HTMLAudioElement | null
   currentWorkId: () => string | null
+  volume: () => number
   isPlaying: (workId: string) => boolean
   playAudio: (audio: HTMLAudioElement, workId: string) => Promise<void>
   pauseAudio: (workId: string) => void
   stopAudio: () => void
   stopOtherAudio: (excludeWorkId: string) => void
+  setVolume: (volume: number) => void
+  resetWorkState: (workId: string) => void
+  registerResetCallback: (workId: string, callback: () => void) => void
+  unregisterAudio: (workId: string) => void
 }
 
 const AudioContext = createContext<AudioContextType>()
@@ -16,6 +21,14 @@ const AudioContext = createContext<AudioContextType>()
 export const AudioProvider: ParentComponent = (props) => {
   const [currentAudio, setCurrentAudio] = createSignal<HTMLAudioElement | null>(null)
   const [currentWorkId, setCurrentWorkId] = createSignal<string | null>(null)
+  const [volume, setVolumeSignal] = createSignal<number>(0.7) // 默认音量 70%
+
+  // 存储所有音频元素的引用，用于状态重置
+  const audioElements = new Map<string, HTMLAudioElement>()
+  const workStateResetCallbacks = new Map<string, () => void>()
+
+  // 追踪所有活跃的音频状态（包括暂停的）
+  const activeWorkIds = new Set<string>()
 
   const isPlaying = (workId: string) => {
     const current = currentAudio()
@@ -24,23 +37,76 @@ export const AudioProvider: ParentComponent = (props) => {
     return Boolean(current && !current.paused && currentId === workId)
   }
 
-  const stopOtherAudio = (excludeWorkId: string) => {
-    const current = currentAudio()
-    const currentId = currentWorkId()
+  const setVolume = (newVolume: number) => {
+    const clampedVolume = Math.max(0, Math.min(1, newVolume))
+    setVolumeSignal(clampedVolume)
 
-    if (current && currentId && currentId !== excludeWorkId) {
-      current.pause()
-      current.currentTime = 0
-      // 清除状态，因为已经停止了其他音频
-      setCurrentAudio(null)
-      setCurrentWorkId(null)
+    // 立即应用到当前播放的音频
+    const current = currentAudio()
+    if (current) {
+      current.volume = clampedVolume
     }
+
+    // 应用到所有已注册的音频元素
+    audioElements.forEach((audio) => {
+      audio.volume = clampedVolume
+    })
+  }
+
+  const registerAudio = (workId: string, audio: HTMLAudioElement) => {
+    audioElements.set(workId, audio)
+    audio.volume = volume() // 设置初始音量
+  }
+
+  const unregisterAudio = (workId: string) => {
+    audioElements.delete(workId)
+    workStateResetCallbacks.delete(workId)
+    activeWorkIds.delete(workId)
+  }
+
+  const registerResetCallback = (workId: string, callback: () => void) => {
+    workStateResetCallbacks.set(workId, callback)
+  }
+
+  const resetWorkState = (workId: string) => {
+    const callback = workStateResetCallbacks.get(workId)
+    if (callback) {
+      callback()
+    }
+  }
+
+  const stopOtherAudio = (excludeWorkId: string) => {
+    // 重置所有其他活跃的音频状态
+    activeWorkIds.forEach((workId) => {
+      if (workId !== excludeWorkId) {
+        const audio = audioElements.get(workId)
+        if (audio) {
+          audio.pause()
+          audio.currentTime = 0
+        }
+        resetWorkState(workId)
+        activeWorkIds.delete(workId)
+      }
+    })
+
+    // 清除全局状态
+    setCurrentAudio(null)
+    setCurrentWorkId(null)
   }
 
   const playAudio = async (audio: HTMLAudioElement, workId: string) => {
     try {
       // 先停止其他音频
       stopOtherAudio(workId)
+
+      // 注册音频元素
+      registerAudio(workId, audio)
+
+      // 将此音频标记为活跃状态
+      activeWorkIds.add(workId)
+
+      // 设置音量
+      audio.volume = volume()
 
       // 设置当前音频
       setCurrentAudio(audio)
@@ -55,6 +121,7 @@ export const AudioProvider: ParentComponent = (props) => {
         setCurrentAudio(null)
         setCurrentWorkId(null)
       }
+      activeWorkIds.delete(workId)
       throw error
     }
   }
@@ -65,7 +132,6 @@ export const AudioProvider: ParentComponent = (props) => {
 
     if (current && currentId === workId) {
       current.pause()
-      // 暂停时清除全局状态，这样 isPlaying 会返回 false
       setCurrentAudio(null)
       setCurrentWorkId(null)
     }
@@ -73,10 +139,19 @@ export const AudioProvider: ParentComponent = (props) => {
 
   const stopAudio = () => {
     const current = currentAudio()
+    const currentId = currentWorkId()
+
     if (current) {
       current.pause()
       current.currentTime = 0
     }
+
+    // 重置当前播放的音频项状态
+    if (currentId) {
+      resetWorkState(currentId)
+      activeWorkIds.delete(currentId)
+    }
+
     setCurrentAudio(null)
     setCurrentWorkId(null)
   }
@@ -85,11 +160,16 @@ export const AudioProvider: ParentComponent = (props) => {
     <AudioContext.Provider value={{
       currentAudio,
       currentWorkId,
+      volume,
       isPlaying,
       playAudio,
       pauseAudio,
       stopAudio,
       stopOtherAudio,
+      setVolume,
+      resetWorkState,
+      registerResetCallback,
+      unregisterAudio,
     }}
     >
       {props.children}

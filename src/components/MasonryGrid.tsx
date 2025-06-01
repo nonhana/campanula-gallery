@@ -1,4 +1,4 @@
-import type { Component, JSX } from 'solid-js'
+import type { JSX } from 'solid-js'
 import { createEffect, createMemo, createSignal, For, onCleanup, onMount, Show } from 'solid-js'
 
 interface MasonryGridProps<T> {
@@ -12,18 +12,11 @@ interface MasonryGridProps<T> {
 interface MasonryItem<T> {
   item: T
   column: number
-  index: number
-  height: number
+  originalIndex: number
 }
 
-// 防抖函数
-function debounce<T extends (...args: any[]) => any>(func: T, wait: number): T {
-  let timeout: number | undefined
-  return ((...args: Parameters<T>) => {
-    clearTimeout(timeout)
-    timeout = window.setTimeout(() => func(...args), wait)
-  }) as T
-}
+// 宽度变化阈值
+const WIDTH_THRESHOLD = 10
 
 export function MasonryGrid<T,>(props: MasonryGridProps<T>) {
   const minColumnWidth = () => props.minColumnWidth || 300
@@ -33,27 +26,27 @@ export function MasonryGrid<T,>(props: MasonryGridProps<T>) {
   const [columns, setColumns] = createSignal(1)
   const [layoutItems, setLayoutItems] = createSignal<MasonryItem<T>[]>([])
   const [isLayoutReady, setIsLayoutReady] = createSignal(false)
-  const itemRefs = new Map<number, HTMLDivElement>()
-
-  // 使用 createMemo 缓存渲染的组件，避免重复创建
-  const renderedItems = createMemo(() => {
-    return props.items.map((item, index) => ({
-      item,
-      index,
-      element: props.renderItem(item, index),
-    }))
-  })
+  const [lastWidth, setLastWidth] = createSignal(0)
 
   // 计算列数
   const calculateColumns = () => {
     if (!containerRef)
       return
+
     const containerWidth = containerRef.offsetWidth
+
+    // 忽略抖动
+    if (Math.abs(containerWidth - lastWidth()) < WIDTH_THRESHOLD)
+      return
+
+    setLastWidth(containerWidth)
     const cols = Math.max(1, Math.floor((containerWidth + gap()) / (minColumnWidth() + gap())))
-    setColumns(cols)
+
+    if (cols !== columns())
+      setColumns(cols)
   }
 
-  // 找到最矮的列
+  // 找到最矮列
   const getShortestColumn = (heights: number[]): number => {
     let minHeight = heights[0]
     let minIndex = 0
@@ -68,28 +61,29 @@ export function MasonryGrid<T,>(props: MasonryGridProps<T>) {
     return minIndex
   }
 
-  // 重新分配项目到列
+  // 分配 item
   const redistributeItems = () => {
-    const items = renderedItems()
     const cols = columns()
-    if (cols === 0 || items.length === 0)
+    const items = props.items
+
+    if (cols === 0 || items.length === 0) {
+      setLayoutItems([])
+      setIsLayoutReady(false)
       return
+    }
 
     const heights = Array.from({ length: cols }, () => 0)
     const distributed: MasonryItem<T>[] = []
 
-    // 简单分配到列（不依赖实际高度测量）
-    items.forEach(({ item, index }) => {
+    items.forEach((item, index) => {
       const shortestCol = getShortestColumn(heights)
 
       distributed.push({
         item,
         column: shortestCol,
-        index,
-        height: 0, // 初始高度，后续可以优化
+        originalIndex: index,
       })
 
-      // 使用估算高度进行分配
       heights[shortestCol] += 400 + gap()
     })
 
@@ -97,67 +91,58 @@ export function MasonryGrid<T,>(props: MasonryGridProps<T>) {
     setIsLayoutReady(true)
   }
 
-  // 响应式调整
-  createEffect(() => {
-    calculateColumns()
+  // 按列分组 item
+  const columnGroups = createMemo(() => {
+    const cols = columns()
+    const items = layoutItems()
+
+    const groups: MasonryItem<T>[][] = Array.from({ length: cols }, () => [])
+
+    items.forEach((item) => {
+      if (item.column < cols) {
+        groups[item.column].push(item)
+      }
+    })
+
+    return groups
   })
 
+  createEffect(calculateColumns)
+
   createEffect(() => {
-    if (columns() > 0 && props.items.length > 0) {
+    if (columns() > 0) {
       redistributeItems()
     }
   })
 
-  // 监听窗口大小变化
+  let resizeObserver: ResizeObserver | null = null
+
   onMount(() => {
-    // 使用防抖处理 resize
-    const handleResize = debounce(() => {
-      calculateColumns()
-      redistributeItems()
-    }, 150)
+    calculateColumns()
 
-    window.addEventListener('resize', handleResize)
+    window.addEventListener('resize', calculateColumns)
 
-    // 使用 ResizeObserver 监听容器大小变化，添加错误处理
-    let resizeObserver: ResizeObserver | null = null
-
-    try {
+    if (window.ResizeObserver && containerRef) {
       resizeObserver = new ResizeObserver((entries) => {
-        // 使用 requestAnimationFrame 避免 ResizeObserver 循环
-        window.requestAnimationFrame(() => {
-          if (!entries[0])
-            return
-          handleResize()
-        })
+        const entry = entries[0]
+        if (entry) {
+          const { width } = entry.contentRect
+          if (Math.abs(width - lastWidth()) >= WIDTH_THRESHOLD) {
+            calculateColumns()
+          }
+        }
       })
 
-      if (containerRef) {
-        resizeObserver.observe(containerRef)
-      }
-    }
-    catch (error) {
-      console.warn('ResizeObserver not supported:', error)
+      resizeObserver.observe(containerRef)
     }
 
     onCleanup(() => {
-      window.removeEventListener('resize', handleResize)
+      window.removeEventListener('resize', calculateColumns)
       if (resizeObserver) {
         resizeObserver.disconnect()
       }
-      itemRefs.clear()
     })
   })
-
-  // 按列分组项目，使用缓存的渲染结果
-  const getColumnItems = (columnIndex: number) => {
-    const items = renderedItems()
-    return layoutItems()
-      .filter(layoutItem => layoutItem.column === columnIndex)
-      .map(layoutItem => ({
-        ...layoutItem,
-        element: items[layoutItem.index]?.element,
-      }))
-  }
 
   return (
     <div
@@ -183,21 +168,22 @@ export function MasonryGrid<T,>(props: MasonryGridProps<T>) {
             'gap': `${gap()}px`,
           }}
         >
-          <For each={Array.from({ length: columns() })}>
-            {(_, colIndex) => (
+          <For each={columnGroups()}>
+            {columnItems => (
               <div class="flex flex-col" style={{ gap: `${gap()}px` }}>
-                <For each={getColumnItems(colIndex())}>
+                <For each={columnItems}>
                   {layoutItem => (
                     <div
-                      ref={el => itemRefs.set(layoutItem.index, el)}
-                      class="animate-in fade-in slide-in-from-bottom-4"
+                      // 使用稳定的key来避免不必要的组件重建
+
+                      class="fade-in slide-in-from-bottom-4 animate-in"
                       style={{
-                        'animation-delay': `${layoutItem.index * 50}ms`,
+                        'animation-delay': `${layoutItem.originalIndex * 50}ms`,
                         'animation-duration': '600ms',
                         'animation-fill-mode': 'backwards',
                       }}
                     >
-                      {layoutItem.element}
+                      {props.renderItem(layoutItem.item, layoutItem.originalIndex)}
                     </div>
                   )}
                 </For>
