@@ -5,6 +5,38 @@ export const bannerInfo = {
   description: '我和我沉寂的灵魂，伴有十一月的初雪...',
 }
 
+export const seoData = {
+  title: 'Campanulas',
+  ogTitle: 'Some melodies just for venting',
+  description: 'The piano keys dance with the petals.',
+  keywords: '钢琴, 音乐, 随弹, 钢琴曲, 钢琴演奏, 钢琴独奏, 纯音乐',
+  image: 'https://static-r2.caelum.moe/campanula-gallery.webp',
+  mySite: 'https://gallery.caelum.moe',
+  twitterHandle: '@non_hanaz',
+  mailAddress: 'zhouxiang757@gmail.com',
+}
+
+export const siteMetaData = {
+  title: seoData.ogTitle,
+  ogTitle: seoData.ogTitle,
+  description: seoData.description,
+
+  // Test on: https://developers.facebook.com/tools/debug/ or https://socialsharepreview.com/
+  ogDescription: seoData.description,
+  ogImage: seoData.image,
+  ogSiteName: seoData.mySite,
+  ogType: 'website',
+  ogUrl: seoData.mySite,
+
+  // Test on: https://cards-dev.twitter.com/validator or https://socialsharepreview.com/
+  twitterSite: seoData.twitterHandle,
+  twitterCard: 'summary_large_image',
+  twitterUrl: seoData.mySite,
+  twitterTitle: seoData.ogTitle,
+  twitterDescription: seoData.description,
+  twitterImage: seoData.image,
+} as const
+
 export const publishedWorks: WorkItem[] = [
   {
     title: '夏の夕焼け',
