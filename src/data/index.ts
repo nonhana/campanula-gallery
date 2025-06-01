@@ -17,7 +17,7 @@ export const seoData = {
 }
 
 export const siteMetaData = {
-  title: seoData.ogTitle,
+  title: seoData.title,
   ogTitle: seoData.ogTitle,
   description: seoData.description,
 
