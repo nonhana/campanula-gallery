@@ -4,7 +4,7 @@ import {
   presetIcons,
   presetTypography,
   presetWebFonts,
-  presetWind,
+  presetWind3,
   transformerDirectives,
   transformerVariantGroup,
 } from 'unocss'
@@ -13,7 +13,7 @@ import { presetScrollbar } from 'unocss-preset-scrollbar'
 export default defineConfig({
   presets: [
     /* Core Presets */
-    presetWind(),
+    presetWind3(),
     presetAttributify(),
     presetIcons(),
     presetTypography(),

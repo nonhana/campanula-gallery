@@ -18,7 +18,7 @@ interface MasonryItem<T> {
 // 宽度变化阈值
 const WIDTH_THRESHOLD = 10
 
-export function MasonryGrid<T,>(props: MasonryGridProps<T>) {
+export function MasonryGrid<T>(props: MasonryGridProps<T>) {
   const minColumnWidth = () => props.minColumnWidth || 300
   const gap = () => props.gap || 24
 
@@ -72,7 +72,7 @@ export function MasonryGrid<T,>(props: MasonryGridProps<T>) {
       return
     }
 
-    const heights = Array.from({ length: cols }, () => 0)
+    const heights = Array.from({ length: cols }).fill(0) as number[]
     const distributed: MasonryItem<T>[] = []
 
     items.forEach((item, index) => {

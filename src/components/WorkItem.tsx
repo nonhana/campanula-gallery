@@ -72,17 +72,15 @@ export default function WorkItem(props: WorkItemProps) {
         }
       })
 
-      // 时间更新时更新进度条
-      audioElement.addEventListener('timeupdate', () => {
-        if (!isDragging() && audioContext.isPlaying(workId())) {
-          setCurrentTime(audioElement.currentTime)
-        }
+      // 开始播放（包括从系统媒体面板恢复）时显示进度条和停止按钮
+      audioElement.addEventListener('play', () => {
+        setHasBeenPlayed(true)
       })
 
-      // 播放结束时停止播放
-      audioElement.addEventListener('ended', () => {
-        if (audioContext.isPlaying(workId())) {
-          handleStop()
+      // 时间更新时更新进度条（暂停时从系统媒体面板拖动进度也要同步）
+      audioElement.addEventListener('timeupdate', () => {
+        if (!isDragging()) {
+          setCurrentTime(audioElement.currentTime)
         }
       })
 
@@ -129,11 +127,7 @@ export default function WorkItem(props: WorkItemProps) {
       else {
         setIsLoading(true)
 
-        if (!hasBeenPlayed()) {
-          setHasBeenPlayed(true)
-        }
-
-        await audioContext.playAudio(audioElement, workId())
+        await audioContext.playAudio(audioElement, workId(), props.work)
         setIsLoading(false)
       }
     }
@@ -152,7 +146,6 @@ export default function WorkItem(props: WorkItemProps) {
       audioElement.removeEventListener('canplay', () => {})
       audioElement.removeEventListener('loadedmetadata', () => {})
       audioElement.removeEventListener('timeupdate', () => {})
-      audioElement.removeEventListener('ended', () => {})
       audioElement.removeEventListener('error', () => {})
 
       audioElement.src = ''

@@ -8,7 +8,7 @@ export function WorkList() {
   const [isLoaded, setIsLoaded] = createSignal(false)
 
   onMount(() => {
-    setTimeout(() => setIsLoaded(true), 100)
+    setTimeout(setIsLoaded, 100, true)
   })
 
   return (

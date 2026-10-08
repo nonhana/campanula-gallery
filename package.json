@@ -2,18 +2,20 @@
   "name": "campanula-works",
   "type": "module",
   "version": "0.0.1",
-  "packageManager": "pnpm@10.11.0",
+  "packageManager": "pnpm@12.10.1",
   "author": "non_hana",
   "license": "MIT",
   "engines": {
-    "node": ">=22"
+    "node": ">=24"
   },
   "scripts": {
-    "dev": "vinxi dev",
-    "build": "vinxi build",
-    "start": "vinxi start",
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "node .output/server/index.mjs",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@solidjs/meta": "catalog:",
@@ -22,14 +24,16 @@
     "@unocss/reset": "catalog:",
     "lucide-solid": "catalog:",
     "solid-js": "catalog:",
-    "unocss": "catalog:",
-    "vinxi": "catalog:"
+    "unocss": "catalog:"
   },
   "devDependencies": {
     "@antfu/eslint-config": "catalog:",
     "@unocss/eslint-plugin": "catalog:",
     "eslint": "catalog:",
     "eslint-plugin-solid": "catalog:",
-    "unocss-preset-scrollbar": "catalog:"
+    "nitro": "catalog:",
+    "typescript": "catalog:",
+    "unocss-preset-scrollbar": "catalog:",
+    "vite": "catalog:"
   }
 }
